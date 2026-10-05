@@ -747,6 +747,19 @@ export class Renderer {
       ctx.arc(0, 0, s * 1.5, -Math.PI / 2, -Math.PI / 2 + TAU * Math.min(1, h.rv));
       ctx.stroke();
     }
+    if (down && !h.isMe) {
+      // a ghost a teammate can bring back: a plus over its head
+      const bob = Math.sin(scene.anim * 3 + h.idx) * 3;
+      ctx.fillStyle = '#7dffb0';
+      ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+      ctx.lineWidth = 3;
+      const cy = -s * 3.2 + bob;
+      ctx.beginPath();
+      ctx.rect(-4, cy - 11, 8, 22);
+      ctx.rect(-11, cy - 4, 22, 8);
+      ctx.stroke();
+      ctx.fill();
+    }
     const flicker = h.invuln > 0 && !(scene.fx && scene.fx.reduced) && Math.sin(scene.anim * 40) > 0;
     if (flicker) ctx.globalAlpha = 0.45;
     const lift = down ? Math.sin(scene.anim * 2 + h.idx) * 0.12 * s - s * 0.4 : 0;

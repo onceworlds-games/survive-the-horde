@@ -432,6 +432,7 @@ export class Run {
     this.finished = false;
     this.endCalled = false;
     this.xpFlash = 0;
+    this.dustT = 0;
     this.youArrow = 3.2;
     this.pageT = 0;
     this.hitBudget = 0;
@@ -872,6 +873,14 @@ export class Run {
       this.deathBudget = this.budget.n;
       this.directorSeen(w.ringIdx, w.bossState, w.waveIdx);
       for (let i = 0; i < MAX_HEROES; i++) this.kills[i] = w.kills[i];
+    }
+    // dust at the heels of a hero who is running
+    if (this.me && this.me.moving && !this.me.down) {
+      this.dustT -= dt;
+      if (this.dustT <= 0) {
+        this.dustT = 0.11;
+        fx.dust(this.me.x - this.me.dx * 0.3, this.me.y + 0.35);
+      }
     }
     // badges that depend on the count
     if (this.me && this.kills[this.seat] >= 1000) this.env.badge('thousand');
