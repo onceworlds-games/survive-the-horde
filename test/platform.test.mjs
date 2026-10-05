@@ -186,3 +186,53 @@ test('platform: a page that loads in the middle of a night skips the title and a
     cleanup(dom);
   }
 });
+
+test('platform: when the room closes the game says why with one button, and the button joins again', async () => {
+  const { dom, hub, friend } = await boot();
+  try {
+    drive(dom, hub, [friend], 1);
+    dom.key('keydown', 'Space');
+    drive(dom, hub, [friend], 1);
+    hub.rooms.get('me').emit('close', 'kicked');
+    drive(dom, hub, [friend], 1);
+    const texts = dom.canvas.getContext().calls.texts;
+    assert.ok(texts.has('YOU WERE REMOVED'));
+    assert.ok(texts.has('PLAY'));
+    const before = hub.rooms.get('me');
+    dom.pointer('pointerdown', 640, 430);
+    for (let i = 0; i < 6; i++) await Promise.resolve();
+    drive(dom, hub, [friend], 2);
+    assert.notEqual(hub.rooms.get('me'), before, 'it joined a fresh room');
+    assert.equal(dom.errors.length, 0, dom.errors.join(' | '));
+    // a refused first join shows the same screen
+  } finally {
+    cleanup(dom);
+  }
+});
+
+test('platform: a join that fails shows NO CONNECTION and keeps trying on a tap', async () => {
+  const dom = installDom({ width: 1280, height: 720 });
+  const hub = new Hub();
+  const ow = fakeOw(hub, 'me');
+  let fail = true;
+  ow.rooms.join = async () => {
+    if (fail) throw new Error('refused');
+    return hub.join('me', 'ME');
+  };
+  globalThis.onceworlds = ow;
+  try {
+    await import(`../game/main.js?platform-${counter++}`);
+    drive(dom, hub, [], 1);
+    assert.ok(dom.canvas.getContext().calls.texts.has('NO CONNECTION'));
+    assert.ok(dom.errors.some((e) => e.includes('refused')), 'the failure is logged');
+    dom.errors.length = 0;
+    fail = false;
+    dom.pointer('pointerdown', 640, 430);
+    for (let i = 0; i < 6; i++) await Promise.resolve();
+    drive(dom, hub, [], 2);
+    assert.ok(dom.canvas.getContext().calls.texts.has('PLAY'), 'the title is back');
+    assert.equal(dom.errors.length, 0, dom.errors.join(' | '));
+  } finally {
+    cleanup(dom);
+  }
+});

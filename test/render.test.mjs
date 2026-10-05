@@ -61,7 +61,16 @@ test('the renderer draws every kind of thing (rim, boss, ghosts, all weapons, ev
       fx.flyGem(3, 3, 2, 1);
       fx.flashAt(0.5, 3);
       const sc = scene(g, fx, { quality });
-      sc.flashUntil[g.world.mon.id[slot]] = 5;
+      const bossNow = g.world.mon.boss;
+      assert.ok(bossNow >= 0);
+      sc.flashUntil[g.world.mon.id[bossNow]] = 5;
+      sc.heroes[1].rv = 0.6;
+      sc.heroes[1].isMe = false;
+      sc.heroes[2].ready = true;
+      sc.heroes[2].away = true;
+      sc.heroes[2].avatar = { complete: true, naturalWidth: 64, width: 64, height: 64 };
+      sc.heroes[0].avatar = { complete: false, naturalWidth: 0, width: 0, height: 0 };
+      sc.heroes[0].ready = true;
       sc.hiddenGem = new Uint8Array(ID_MASK + 1);
       sc.hiddenGem[g.world.gem.id[0]] = 1;
       // the middle of the clearing, then the very edge of the arena (the ring of fallen trees), then beyond a corner
