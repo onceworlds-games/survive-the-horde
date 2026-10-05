@@ -75,9 +75,10 @@ export class Renderer {
     const at = (x, y, r, fn) => {
       // draw at every wrap offset the element touches, so the tile repeats seamlessly
       for (let ox = -1; ox <= 1; ox++) {
-        if ((ox === -1 && x - r > 0) || (ox === 1 && x + r < S)) continue;
+        // a copy shifted right is needed only if the element spills over the left edge, and so on
+        if ((ox === 1 && x - r >= 0) || (ox === -1 && x + r <= S)) continue;
         for (let oy = -1; oy <= 1; oy++) {
-          if ((oy === -1 && y - r > 0) || (oy === 1 && y + r < S)) continue;
+          if ((oy === 1 && y - r >= 0) || (oy === -1 && y + r <= S)) continue;
           fn(x + ox * S, y + oy * S);
         }
       }
@@ -1046,7 +1047,7 @@ export class Renderer {
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.globalCompositeOperation = 'source-over';
       g.clearRect(0, 0, dw, dh);
-      g.fillStyle = `rgba(3,9,24,${(0.82 * dark).toFixed(3)})`;
+      g.fillStyle = `rgba(3,9,24,${(0.7 * dark).toFixed(3)})`;
       g.fillRect(0, 0, dw, dh);
       g.globalCompositeOperation = 'destination-out';
       const kx = dw / W;
@@ -1064,7 +1065,7 @@ export class Renderer {
       };
       for (let i = 0; i < scene.nHeroes; i++) {
         const h = scene.heroes[i];
-        light(h.x, h.y, h.down ? 3 : 8.5, h.down ? 0.5 : 0.97);
+        light(h.x, h.y, h.down ? 3 : 10, h.down ? 0.5 : 0.97);
       }
       if (this.quality !== 'low' && scene.fighters) {
         let lights = 0;
@@ -1167,6 +1168,7 @@ export class Renderer {
         }
         continue;
       }
+      if (scene.noNames || !h.name) continue;
       // name tag: small avatar head and the name
       const ty = this.sy(h.y) - ppu * HERO_SCALE * 3.0 - 12;
       ctx.font = `700 13px ${FONT}`;

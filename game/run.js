@@ -56,12 +56,12 @@ const RESULT_SECS = 9;
 
 /** How another player (or I) look on this screen. */
 export class RHero {
-  constructor(id, seat) {
+  constructor(id, seat, colour = seat) {
     this.id = id;
     this.idx = seat;
     this.name = '';
-    this.color = HERO_COLORS[seat % HERO_COLORS.length];
-    this.dark = HERO_COLORS_DARK[seat % HERO_COLORS_DARK.length];
+    this.color = HERO_COLORS[colour % HERO_COLORS.length];
+    this.dark = HERO_COLORS_DARK[colour % HERO_COLORS_DARK.length];
     this.x = 0;
     this.y = 0;
     this.dx = 1;
@@ -285,7 +285,7 @@ export class Demo {
     this.restartAt = -1;
     this.scene = {
       quality: 'high', camX: 0, camY: 0, anim: 0, t: 0, mon: null, gem: null, hiddenGem: null, heroes: this.list, nHeroes: 1, fighters: [],
-      fx: env.fx, flashUntil: this.flashUntil, focusX: 0, darkness: 0.86, dawn: 0, crumble: 0, youArrow: 0,
+      fx: env.fx, flashUntil: this.flashUntil, focusX: 0, darkness: 0.9, dawn: 0, crumble: 0, youArrow: 0, noBars: true, noNames: true,
     };
     this.reset();
   }
@@ -400,7 +400,9 @@ export class Run {
     this.flashUntil = new Float32Array(ID_MASK + 1);
     this.batch = new HitBatch();
     this.claims = [];
-    this.rh = this.roster.map((id, seat) => new RHero(id, seat));
+    // colours go by sorted ids, the same as in the camp, so a hero keeps its colour from the lobby into the night
+    const sorted = [...this.roster].sort();
+    this.rh = this.roster.map((id, seat) => new RHero(id, seat, sorted.indexOf(id)));
     for (const r of this.rh) {
       r.isMe = r.id === this.meId;
       r.avatar = env.avatar(r.id);
@@ -444,7 +446,8 @@ export class Run {
     // restore the camera on my hero
     if (this.me) {
       const p = room.me.presence;
-      if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) {
+      // a reloaded page carries on from where it was in the night (not from the camp's last spot)
+      if (p && p.ph === 'p' && Number.isFinite(p.x) && Number.isFinite(p.y)) {
         this.me.x = p.x;
         this.me.y = p.y;
       } else {

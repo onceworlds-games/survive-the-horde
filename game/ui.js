@@ -533,11 +533,18 @@ export class UI {
     const bossX = cx - pw / 2 + pw * ((S.length - BOSS_BEFORE_END) / S.length);
     this.skull(ctx, bossX, py + 2.5, 7 * u + 2, S.boss && S.boss.on ? '#ff4a3a' : '#d8d2c4');
 
+    // my health, level and kills: top right (below the clock on a narrow screen)
+    const pw2 = Math.max(180, 232 * u);
+    const narrow = W < 560;
+    const px = narrow ? W / 2 - pw2 / 2 : W - pw2 - 12;
+    const pyy = narrow ? py + 18 * u + 12 : bh + 8;
+
     // the Night Warden's health
     if (S.boss && S.boss.on) {
-      const w = Math.min(460 * u + 60, W - 360);
+      const room = narrow ? W - 24 : 2 * (px - 16 - cx);
+      const w = Math.max(120, Math.min(460 * u + 60, room));
       const bx = cx - w / 2;
-      const by = py + 22 * u;
+      const by = narrow ? pyy + 56 * u + 14 + S.mates.length * (28 * u + 4) : py + 22 * u;
       ctx.fillStyle = 'rgba(0,0,0,0.65)';
       ctx.fillRect(bx - 2, by - 2, w + 4, 16 * u + 6);
       ctx.fillStyle = '#ff2a3a';
@@ -547,10 +554,6 @@ export class UI {
       this.text(ctx, 'NIGHT WARDEN', cx, by + 8 * u + 1, 14 * u + 3, { ls: 3 });
     }
 
-    // my health, level and kills, top right
-    const pw2 = Math.max(180, 232 * u);
-    const px = W - pw2 - 12;
-    const pyy = bh + 8;
     this.panel(ctx, px, pyy, pw2, 56 * u + 8);
     const hf = Math.max(0, Math.min(1, S.hp / Math.max(1, S.maxHp)));
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -602,9 +605,9 @@ export class UI {
 
   loadout(ctx, S) {
     const { W, H, u } = this;
-    const sz = Math.max(30, 38 * u);
     const gap = 6 * u + 2;
     const slots = 10;
+    const sz = Math.max(20, Math.min(Math.max(30, 38 * u), (W - 16 - 14 * u - (slots - 1) * gap) / slots));
     const total = slots * sz + (slots - 1) * gap + 14 * u;
     let x = W / 2 - total / 2;
     const y = H - sz - Math.max(10, 14 * u);
@@ -638,11 +641,12 @@ export class UI {
     const gap = 14 * u;
     const margin = S.touch ? 214 : 20;
     const avail = W - margin - 20;
-    const cw = Math.max(130, Math.min(232 * u + 20, (avail - gap * (n - 1)) / n));
+    const cw = Math.max(96, Math.min(232 * u + 20, (avail - gap * (n - 1)) / n));
     const ch = Math.max(132, Math.min(172 * u + 12, H * 0.34));
     const total = n * cw + (n - 1) * gap;
     const x0 = S.touch ? margin + (avail - total) / 2 : W / 2 - total / 2;
-    const y = S.touch ? Math.max(70, H / 2 - ch / 2 + 14) : H - ch - Math.max(10, 14 * u) - Math.max(30, 38 * u) - 20 * u - 22;
+    const slotH = Math.max(20, Math.min(Math.max(30, 38 * u), (W - 16 - 14 * u - 9 * (6 * u + 2)) / 10));
+    const y = S.touch ? Math.max(70, H / 2 - ch / 2 + 14) : H - ch - Math.max(10, 14 * u) - slotH - 20 * u - 22;
     this.text(ctx, 'LEVEL UP', W / 2, y - 30 * u, 34 * u + 4, { color: GOLD, ls: 5 });
     for (let i = 0; i < n; i++) {
       const x = x0 + i * (cw + gap);

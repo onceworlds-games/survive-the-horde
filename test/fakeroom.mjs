@@ -9,6 +9,7 @@ export class Hub {
     this.hostId = null;
     this.match = { phase: 'lobby', n: 0, min: 1 };
     this.log = [];
+    this.opened = 0;
   }
 
   join(id, name = id) {
@@ -49,6 +50,13 @@ export class Hub {
   start(participants, seed = 12345) {
     const n = this.match.n + 1;
     this.setMatch({ phase: 'playing', n, min: 1, id: `m${n}`, seed, participants: [...participants], startedAt: this.clock, pausedMs: 0 });
+  }
+
+  /** The countdown: `starting` until `ms` have passed (the test calls start() then). */
+  starting(participants, ms = 3000) {
+    const n = this.match.n + 1;
+    this.setMatch({ phase: 'starting', n, min: 1, id: `m${n}`, seed: 777, participants: [...participants], startsAt: this.clock + ms });
+    for (const room of this.rooms.values()) room.emit('starting', this.match);
   }
 
   end() {
@@ -107,8 +115,13 @@ export class FakeRoom {
   }
   setReady() {}
   clearReady() {}
-  setOpen() {}
-  hideLobby() {}
+  setOpen() {
+    this.hub.opened++;
+  }
+  hideLobby(hidden = true) {
+    this.lobbyHidden = hidden;
+    this.hideCalls = (this.hideCalls ?? 0) + 1;
+  }
   setPrivate() {}
   privateOf() {
     return {};

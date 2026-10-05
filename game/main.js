@@ -57,6 +57,7 @@ async function main() {
   let controlsMode = '';
   let errorAt = -10;
   let room = null;
+  let skippedTitle = false;
   let closedReason = null;
   const listeners = { off: [] };
   let savedRun = null;
@@ -546,6 +547,7 @@ async function main() {
           if (f) ui.watching(ctx, f.name || 'PLAYER', f.color);
         }
         setControls(live ? 'play' : '');
+        if (skippedTitle && !audioOn) ui.tip(ctx, 'TAP FOR SOUND');
         const goLeft = goUntil - nowSec();
         if (goLeft > 0) {
           S.count = 0;
@@ -637,5 +639,6 @@ async function main() {
   // a page that loads in the middle of a night skips the title
   if (room && room.match.phase !== 'lobby') {
     titleOpen = false;
+    skippedTitle = true;
   }
 }
