@@ -127,21 +127,26 @@ test('a monster missing from the next picture is a death at its last place, repo
   assert.equal(interp.dn, 0, 'the same window does not report it again');
 });
 
-test('hits this page already made hide a monster before the host confirms, and the mark goes when the id does', () => {
+test('hits this page already made hide a monster before the host confirms, and show no second death', () => {
   const w = new World({ seed: 1, length: 300 });
   w.setHero(0, 50, 50, true);
   const a = w.spawn(T_KNIGHT, 3, 4);
+  w.spawn(T_SKEL, 9, 9);
   const id = w.mon.id[a];
   const interp = new Interp();
   const view = new Monsters();
   interp.push(0, encodeMonsters(w.mon).data, 10);
   interp.push(0.1, encodeMonsters(w.mon).data, 10.1);
   interp.hide[id] = 1;
-  interp.fill(view, 10.2, 0.1, 0, null);
-  assert.equal(view.dead[0], 1);
+  interp.fill(view, 10.12, 0.1, 0, null);
+  const shown = [...view.dead.slice(0, view.n)];
+  assert.ok(shown.includes(1), 'the predicted kill is flagged dead in the view');
   w.hit(a, 1e9, 0, 0);
+  w.step(STEP);
   interp.push(0.2, encodeMonsters(w.mon).data, 10.2);
-  assert.equal(interp.hide[id], 0);
+  interp.fill(view, 10.25, 0.1, 0, null); // playback 0.15: window (0.1, 0.2) where the monster is gone
+  assert.equal(interp.dn, 0, 'no second burst for a death that was already shown');
+  assert.equal(interp.hide[id], 0, 'the mark is gone once the picture caught up');
 });
 
 test('a host whose clock restarts (a new host) resets the playback instead of freezing it', () => {

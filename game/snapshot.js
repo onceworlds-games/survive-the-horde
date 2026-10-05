@@ -110,7 +110,7 @@ export class Snap {
   }
 }
 
-/** The latest gems (no smoothing: they sit still). */
+/** The latest gems (no smoothing: they sit still). New ones remember when they showed up (the pop-in). */
 export class GemSnap {
   constructor() {
     this.t = 0;
@@ -120,7 +120,12 @@ export class GemSnap {
     this.y = new Float32Array(MAX_GEMS + 8);
     this.tier = new Uint8Array(MAX_GEMS + 8);
     this.born = new Float32Array(MAX_GEMS + 8);
-    this.seen = new Uint8Array(ID_MASK + 1); // ids present in the last snapshot (to tell new ones apart)
+    this.known = new Uint8Array(ID_MASK + 1); // 1: in the current picture
+    this.bornAt = new Float32Array(ID_MASK + 1);
+    this.old = new Int32Array(MAX_GEMS + 8);
+    this.gone = new Int32Array(MAX_GEMS + 8); // ids that were in the previous picture and aren't in this one
+    this.goneN = 0;
+    this.loaded = false;
   }
 
   load(t, data) {
@@ -132,22 +137,34 @@ export class GemSnap {
       return false;
     }
     const count = Math.min(Math.floor(bytes / (FIELDS * 2)), MAX_GEMS + 8);
-    for (let i = 0; i < this.n; i++) this.seen[this.id[i] & ID_MASK] = 0;
+    const oldN = this.n;
+    for (let i = 0; i < oldN; i++) {
+      this.old[i] = this.id[i] & ID_MASK;
+      this.known[this.old[i]] = 2; // until seen again
+    }
     let n = 0;
     for (let i = 0; i < count; i++) {
       const off = i * FIELDS * 2;
       const id = inboxView.getInt16(off, true) & ID_MASK;
-      if (this.seen[id]) continue;
+      if (this.known[id] === 1) continue;
+      if (this.known[id] === 0) this.bornAt[id] = this.loaded ? t : t - 10;
+      this.known[id] = 1;
       this.id[n] = id;
       this.x[n] = inboxView.getInt16(off + 2, true) / 10;
       this.y[n] = inboxView.getInt16(off + 4, true) / 10;
       this.tier[n] = Math.min(2, Math.max(0, inboxView.getInt16(off + 6, true)));
-      this.born[n] = t;
-      this.seen[id] = 1;
+      this.born[n] = this.bornAt[id];
       n++;
+    }
+    this.goneN = 0;
+    for (let i = 0; i < oldN; i++) {
+      if (this.known[this.old[i]] !== 2) continue;
+      this.known[this.old[i]] = 0;
+      this.gone[this.goneN++] = this.old[i];
     }
     this.n = n;
     this.t = t;
+    this.loaded = true;
     return true;
   }
 }
@@ -207,19 +224,8 @@ export class Interp {
       this.curA = null;
       this.curB = null;
     }
-    const before = this.newest;
     const ok = snap.load(t, data);
     if (!ok) return false;
-    // ids that left since the previous picture lose their local marks
-    if (before) {
-      for (let i = 0; i < before.n; i++) {
-        const id = before.id[i] & ID_MASK;
-        if (snap.idx[id] < 0) {
-          this.hide[id] = 0;
-          this.pred[id] = 0;
-        }
-      }
-    }
     this.list.push(snap);
     this.latest = t;
     return true;
@@ -264,7 +270,16 @@ export class Interp {
     if (A !== B && (A !== this.curA || B !== this.curB)) {
       // the window moved on: whoever was in A and isn't in B died (or left) just now
       for (let i = 0; i < A.n; i++) {
-        if (B.idx[A.id[i] & ID_MASK] < 0 && this.dn < this.dx.length) {
+        const id = A.id[i] & ID_MASK;
+        if (B.idx[id] >= 0) continue;
+        if (this.hide[id] === 1) {
+          // this page already showed that death when its own hit landed
+          this.hide[id] = 0;
+          this.pred[id] = 0;
+          continue;
+        }
+        this.pred[id] = 0;
+        if (this.dn < this.dx.length) {
           this.dx[this.dn] = A.x[i];
           this.dy[this.dn] = A.y[i];
           this.dtype[this.dn] = A.type[i];
