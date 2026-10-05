@@ -193,7 +193,8 @@ function coverPoster(renderer, rng) {
   for (let i = 0; i < 9; i++) st.fx.flyGem(Math.cos(i * 0.7) * 3.5, Math.sin(i * 0.7) * 3.0, i % 3, 0);
   for (let i = 0; i < st.fx.fn; i++) st.fx.fage[i] = 0.02 + (i / 9) * 0.14;
   const list = rheroes(st, ids);
-  const sc = sceneFor(st, list, 0, -1.6);
+  renderer.ppu = 54;
+  const sc = sceneFor(st, list, 0, -1.9);
   renderer.frame(sc);
   titleOver(renderer, 'SURVIVE', 'THE HORDE');
   return { monsters: g.world.mon.n, bolts: g.fighters[0].pn, areas: g.fighters[0].an, particles: st.fx.particles.n, gems: g.world.gem.n };
@@ -249,7 +250,8 @@ function winPoster(renderer, rng) {
   // run into the dawn and stop while the horde is half gone
   stepUntil(st, 6, (gg) => gg.world.dawn && gg.world.mon.n < 150);
   const list = rheroes(st, ids);
-  const sc = sceneFor(st, list, 0, -0.8, { darkness: 0.1, dawn: 1 });
+  renderer.ppu = 56;
+  const sc = sceneFor(st, list, 0, -1.0, { darkness: 0.1, dawn: 1 });
   renderer.frame(sc);
   // the sun coming up over the trees
   const ctx = renderer.ctx;

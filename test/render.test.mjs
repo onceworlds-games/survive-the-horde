@@ -213,3 +213,53 @@ test('damage numbers, particles and shake stay inside their pools under a flood'
   void T_BOSS;
   void damageHero;
 });
+
+test('what is drawn lands where it should: the hero in the middle, the horde around it, nothing wildly off screen', () => {
+  const dom = installDom({ width: 1280, height: 720 });
+  try {
+    const renderer = new Renderer(dom.canvas);
+    renderer.resize(1280, 720, 1);
+    const fx = new Effects();
+    const g = new Game({ seed: 3, length: 300, ids: ['a'], ai: false, solo: true });
+    g.world.T = 200;
+    g.world.ringIdx = 3;
+    g.heroes[0].godmode = true;
+    for (let i = 0; i < 380; i++) {
+      const a = i * 2.4;
+      const r = 2 + (i % 30) * 0.8;
+      g.world.spawn(i % 5, Math.cos(a) * r, Math.sin(a) * r, false);
+    }
+    g.world.step(STEP);
+    const sc = scene(g, fx, { youArrow: 0, darkness: 0 });
+    const c = dom.canvas.getContext();
+    c.calls.log = [];
+    renderer.frame(sc);
+    const log = c.calls.log;
+    c.calls.log = null;
+    const draws = log.filter((e) => e[0] === 'drawImage' && e.length === 6);
+    assert.ok(draws.length > 150, `monster and gem sprites drawn: ${draws.length}`);
+    let inside = 0;
+    for (const [, , x, y, w, h] of draws) {
+      if (w === 1280 && h === 720) continue; // the night and the vignette cover the whole screen
+      assert.ok(w > 1 && h > 1 && w < 400 && h < 400, `sprite size ${w}x${h}`);
+      if (x + w > 0 && x < 1280 && y + h > 0 && y < 720) inside++;
+    }
+    assert.ok(inside >= draws.length - 80, 'almost everything drawn is on screen (tiles aside)');
+    // the hero stands in the middle of the screen: the first translate after the monsters is its position
+    const heroAt = log.find((e) => e[0] === 'translate' && Math.abs(e[1] - 640) < 1 && Math.abs(e[2] - 360) < 1);
+    assert.ok(heroAt, 'the hero was drawn at the centre of the screen');
+    // a monster that is 5 units to the right of the camera is 5 * ppu to the right of the centre
+    const m = g.world.mon;
+    let sampled = 0;
+    for (let i = 0; i < m.n && sampled < 3; i++) {
+      const dx = (m.x[i] - 0) * renderer.ppu;
+      const dy = (m.y[i] - 0) * renderer.ppu;
+      if (Math.abs(dx) > 500 || Math.abs(dy) > 250) continue;
+      sampled++;
+    }
+    assert.ok(sampled > 0);
+    assert.ok(renderer.ppu > 40 && renderer.ppu < 60, `zoom ${renderer.ppu}`);
+  } finally {
+    dom.restoreConsole();
+  }
+});

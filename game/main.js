@@ -61,6 +61,7 @@ async function main() {
   let closedReason = null;
   const listeners = { off: [] };
   let savedRun = null;
+  let savedReady = false;
   let stats = { runs: 0, dawns: 0, bestTime: 0, bestKills: 0, bestLevel: 0, totalKills: 0 };
   const badges = new Set();
   const avatars = new Map();
@@ -116,12 +117,19 @@ async function main() {
       if (v && typeof v === 'object') stats = { ...stats, ...v };
     })
     .catch(() => {});
+  // a reload mid-night restores the hero from its checkpoint: the night's page waits (a moment) for the lookup
   Promise.resolve()
     .then(() => ow.save.get('run'))
     .then((v) => {
       if (v && typeof v === 'object') savedRun = v;
     })
-    .catch(() => {});
+    .catch(() => {})
+    .then(() => {
+      savedReady = true;
+    });
+  setTimeout(() => {
+    savedReady = true;
+  }, 2500);
 
   function avatar(id) {
     let a = avatars.get(id);
@@ -403,7 +411,10 @@ async function main() {
   function reconcile() {
     const m = room.match;
     if (m.phase === 'playing') {
-      if (!run || run.mid !== m.id) startRun();
+      if (!run || run.mid !== m.id) {
+        if (!savedReady) return; // the checkpoint is still being read
+        startRun();
+      }
     } else {
       if (run) endRun();
       if (!camp) startCamp();
@@ -557,6 +568,14 @@ async function main() {
         }
       }
       music(showResults ? 0 : S.boss && S.boss.on ? 2 : 1, !showResults);
+      return;
+    }
+
+    if (!run && !camp) {
+      // still reading the checkpoint (a reload in the middle of a night): the quiet night behind, nothing else
+      demo.frame(dt, anim);
+      demo.scene.quality = ow.settings.quality;
+      renderer.frame(demo.scene);
       return;
     }
 

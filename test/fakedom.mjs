@@ -19,7 +19,7 @@ export class FakeGradient {
 }
 
 export function makeContext(canvas) {
-  const calls = { n: 0, byName: Object.create(null), stack: 0, texts: new Set() };
+  const calls = { n: 0, byName: Object.create(null), stack: 0, texts: new Set(), log: null };
   const ctx = {
     canvas,
     calls,
@@ -54,6 +54,7 @@ export function makeContext(canvas) {
   for (const n of NAMES2D) {
     ctx[n] = (...args) => {
       calls.n++;
+      if (calls.log) calls.log.push([n, ...args]);
       calls.byName[n] = (calls.byName[n] || 0) + 1;
       if (n === 'save') calls.stack++;
       if (n === 'restore') {
@@ -241,6 +242,7 @@ export function installDom({ width = 1280, height = 720, search = '', touch = fa
     return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => void m.set(k, String(v)), removeItem: (k) => void m.delete(k) };
   })();
   // timers and the date follow the test's clock
+  const real = { now: Date.now, setTimeout: globalThis.setTimeout, setInterval: globalThis.setInterval, clearTimeout: globalThis.clearTimeout, clearInterval: globalThis.clearInterval };
   const timers = [];
   const baseDate = 1.7e12;
   Date.now = () => baseDate + fake.now;
@@ -274,6 +276,11 @@ export function installDom({ width = 1280, height = 720, search = '', touch = fa
   };
   fake.restoreConsole = () => {
     console.error = origError;
+    Date.now = real.now;
+    globalThis.setTimeout = real.setTimeout;
+    globalThis.setInterval = real.setInterval;
+    globalThis.clearTimeout = real.clearTimeout;
+    globalThis.clearInterval = real.clearInterval;
   };
   fake.frame = (ms = 1000 / 60) => {
     fake.now += ms;
