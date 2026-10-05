@@ -1,0 +1,24 @@
+{
+  "slug": "survive-the-horde",
+  "name": "Survive the Horde",
+  "description": "Thousands of monsters. Auto-attack, level up, survive until dawn.",
+  "dir": "game",
+  "productionBranch": "main",
+  "genre": "Survival",
+  "icon": "store/icon.png",
+  "thumbnails": ["store/thumb-1.png", "store/thumb-2.png", "store/thumb-3.png"],
+  "controls": [
+    { "keys": ["W", "A", "S", "D"], "action": "Move" },
+    { "keys": ["Arrows"], "action": "Move" },
+    { "keys": ["1", "2", "3"], "action": "Pick an upgrade" },
+    { "keys": ["Click"], "action": "Pick an upgrade" },
+    { "keys": ["Tap"], "action": "Pick an upgrade" },
+    { "keys": ["Space"], "action": "Play" }
+  ],
+  "badges": [
+    { "id": "dawn", "name": "Dawn", "description": "Survive until dawn.", "icon": "store/badge-dawn.png" },
+    { "id": "boss-slayer", "name": "Boss Slayer", "description": "Defeat the Night Warden.", "icon": "store/badge-boss-slayer.png" },
+    { "id": "level-30", "name": "Level 30", "description": "Reach level 30 in a run.", "icon": "store/badge-level-30.png" },
+    { "id": "thousand", "name": "Thousand", "description": "Defeat 1000 monsters in one run.", "icon": "store/badge-thousand.png" }
+  ]
+}
