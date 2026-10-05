@@ -51,6 +51,7 @@ export class World {
     this.ringIdx = 0;
     this.bossState = 0; // 0 not yet, 1 walking the arena, 2 dead
     this.dawn = false;
+    this.opened = false;
     this.crumbleAcc = 0;
     this.kills = new Int32Array(MAX_HEROES);
     this.totalKills = 0;
@@ -161,6 +162,7 @@ export class World {
     this.nextId = meta && meta.nid > 0 ? meta.nid | 0 : 0;
     this.nextGem = meta && meta.ngid > 0 ? meta.ngid | 0 : 0;
     this.dawn = T >= this.length;
+    this.opened = true;
     if (mon) {
       for (let i = 0; i < mon.n && this.mon.n < this.mon.cap; i++) {
         this.place(mon.id[i], mon.type[i], mon.x[i], mon.y[i], mon.elite[i] === 1, 1, 1, Math.min(1, Math.max(0.004, mon.hpf[i])));
@@ -242,8 +244,10 @@ export class World {
 
   spawnOne() {
     this.anchor();
-    this.findSpawn(this.anX, this.anY, 16.5 + this.rng() * 2.5);
-    this.spawn(this.pickType(), this.spX, this.spY, false);
+    // the first seconds: they come from nearer and hurry, so a night never opens with ten quiet seconds
+    const early = this.T < 15;
+    this.findSpawn(this.anX, this.anY, early ? 14 + this.rng() * 1.5 : 16.5 + this.rng() * 2.5);
+    this.spawn(early ? T_SKEL : this.pickType(), this.spX, this.spY, false, early ? 1.7 : 1);
   }
 
   /** Makes room for `count` more monsters by dropping the ones farthest from every hero. */
@@ -454,6 +458,10 @@ export class World {
     if (this.dawn) {
       this.crumble(dt);
       return;
+    }
+    if (!this.opened) {
+      this.opened = true;
+      for (let k = 0; k < 4; k++) this.spawnOne();
     }
     const waves = Math.max(2, Math.round(len / WAVE_SECS));
     const wave = Math.min(waves - 1, Math.floor(T / WAVE_SECS));

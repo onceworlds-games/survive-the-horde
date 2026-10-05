@@ -17,7 +17,7 @@ export class Sound {
     this.musicBus = null;
     this.musicFilter = null;
     this.noiseBuf = null;
-    this.voices = 0;
+    this.ends = []; // when each playing voice ends (audio time): a leak-proof count of voices
     this.last = Object.create(null);
     this.gemStep = 0;
     this.gemAt = -10;
@@ -104,11 +104,21 @@ export class Sound {
   }
 
   // ---------------------------------------------------------------- building blocks
+  /** How many voices are still sounding. */
+  active() {
+    const now = this.ctx.currentTime;
+    const e = this.ends;
+    let w = 0;
+    for (let i = 0; i < e.length; i++) if (e[i] > now) e[w++] = e[i];
+    e.length = w;
+    return w;
+  }
+
   gate(name, gap) {
     const now = this.ctx.currentTime;
     if (now - (this.last[name] ?? -10) < gap) return false;
     this.last[name] = now;
-    return this.voices < MAX_VOICES;
+    return this.active() < MAX_VOICES;
   }
 
   tone(freq, dur, type, vol, delay = 0, slideTo = 0, bus = this.sfx) {
@@ -124,9 +134,8 @@ export class Sound {
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     o.connect(g);
     g.connect(bus);
-    this.voices++;
+    this.ends.push(t + dur + 0.05);
     o.onended = () => {
-      this.voices--;
       try {
         g.disconnect();
       } catch {
@@ -154,9 +163,8 @@ export class Sound {
     s.connect(f);
     f.connect(g);
     g.connect(bus);
-    this.voices++;
+    this.ends.push(t + dur + 0.05);
     s.onended = () => {
-      this.voices--;
       try {
         g.disconnect();
       } catch {

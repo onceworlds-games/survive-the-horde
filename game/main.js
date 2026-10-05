@@ -170,6 +170,7 @@ async function main() {
     });
     on('matchstart', () => {
       goUntil = nowSec() + 0.9;
+      showCallout('SURVIVE UNTIL DAWN', '#ffd36b', 50);
       if (audioOn) sound.count(0);
     });
     on('close', (reason) => {

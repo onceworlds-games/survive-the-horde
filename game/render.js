@@ -1,13 +1,13 @@
 // Draws the world: the dark forest clearing, gems, monsters, heroes, weapons, effects and the night. Canvas 2D, no
 // allocation per frame (typed arrays, counting sorts, cached canvases). The HUD is in ui.js.
-import { ARENA_R, MAX_MON, ID_MASK, BLADES, T_BOSS, T_DUMMY, T_KNIGHT, MON_R, W_BLADES } from './data.js';
+import { ARENA_R, MAX_MON, ID_MASK, BLADES, T_BOSS, T_DUMMY, T_KNIGHT, MON_R, W_BLADES, BOSS_ART } from './data.js';
 import { hash2 } from './rng.js';
 import { SpriteSet, newCanvas } from './sprites.js';
 import { drawMonster, drawShadow, drawHero, setWhite, hexA } from './art.js';
 import {
   A_RING, A_LIGHTNING, A_RAIN, A_NOVA, A_WAVE, bladePos, easeOut,
 } from './combat.js';
-import { PAL, K_DOT, K_SPARK, K_RING, K_PUFF, K_GLOW, numText, N_CRIT, N_HURT, N_HEAL } from './fx.js';
+import { PAL, K_DOT, K_SPARK, K_RING, K_GLOW, numText, N_CRIT, N_HURT, N_HEAL } from './fx.js';
 
 const TILE = 8; // world units per ground tile
 const HERO_SCALE = 0.5; // world units per hero art unit
@@ -33,6 +33,7 @@ export class Renderer {
     this.darkCtx = null;
     this.vig = null;
     this.red = null;
+    this.lightDot = null;
     this.order = new Int32Array(MAX_MON + 24);
     this.keys = new Int16Array(MAX_MON + 24);
     this.counts = new Int32Array(514);
@@ -129,6 +130,19 @@ export class Renderer {
 
   ensureOverlays() {
     const { W, H } = this;
+    if (!this.lightDot) {
+      const c = newCanvas(48, 48);
+      const g = c.getContext('2d');
+      if (g) {
+        const gr = g.createRadialGradient(24, 24, 0, 24, 24, 24);
+        gr.addColorStop(0, 'rgba(0,0,0,1)');
+        gr.addColorStop(0.5, 'rgba(0,0,0,0.5)');
+        gr.addColorStop(1, 'rgba(0,0,0,0)');
+        g.fillStyle = gr;
+        g.fillRect(0, 0, 48, 48);
+      }
+      this.lightDot = c;
+    }
     if (!this.dark) {
       const dw = Math.max(32, Math.ceil(W / 4));
       const dh = Math.max(32, Math.ceil(H / 4));
@@ -665,10 +679,9 @@ export class Renderer {
     const { ppu } = this;
     const anim = scene.anim;
     const id = mon.id[i] & ID_MASK;
-    const r = MON_R[T_BOSS];
     const sx = this.sx(mon.x[i]);
     const sy = this.sy(mon.y[i]);
-    const k = ppu * r;
+    const k = ppu * BOSS_ART;
     // a dark aura and the shadow
     ctx.save();
     ctx.translate(sx, sy);
@@ -734,7 +747,7 @@ export class Renderer {
       ctx.arc(0, 0, s * 1.5, -Math.PI / 2, -Math.PI / 2 + TAU * Math.min(1, h.rv));
       ctx.stroke();
     }
-    const flicker = h.invuln > 0 && Math.sin(scene.anim * 40) > 0;
+    const flicker = h.invuln > 0 && !(scene.fx && scene.fx.reduced) && Math.sin(scene.anim * 40) > 0;
     if (flicker) ctx.globalAlpha = 0.45;
     const lift = down ? Math.sin(scene.anim * 2 + h.idx) * 0.12 * s - s * 0.4 : 0;
     ctx.translate(0, lift);
@@ -1047,7 +1060,7 @@ export class Renderer {
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.globalCompositeOperation = 'source-over';
       g.clearRect(0, 0, dw, dh);
-      g.fillStyle = `rgba(3,9,24,${(0.7 * dark).toFixed(3)})`;
+      g.fillStyle = `rgba(3,9,24,${(0.58 * dark).toFixed(3)})`;
       g.fillRect(0, 0, dw, dh);
       g.globalCompositeOperation = 'destination-out';
       const kx = dw / W;
@@ -1065,7 +1078,7 @@ export class Renderer {
       };
       for (let i = 0; i < scene.nHeroes; i++) {
         const h = scene.heroes[i];
-        light(h.x, h.y, h.down ? 3 : 10, h.down ? 0.5 : 0.97);
+        light(h.x, h.y, h.down ? 3 : 11, h.down ? 0.5 : 0.97);
       }
       if (this.quality !== 'low' && scene.fighters) {
         let lights = 0;
@@ -1084,7 +1097,20 @@ export class Renderer {
           }
         }
       }
-      // lit gems and the boss's eyes
+      // gems and elites glow in the dark
+      const gem = scene.gem;
+      if (gem && this.lightDot && this.quality !== 'low') {
+        g.globalAlpha = 0.8;
+        const rr = 1.5 * ppu * kx;
+        for (let i = 0; i < gem.n; i++) {
+          const gx = (gem.x[i] - this.camX) * ppu * kx + dw / 2;
+          const gy = (gem.y[i] - this.camY) * ppu * ky + dh / 2;
+          if (gx < -rr || gx > dw + rr || gy < -rr || gy > dh + rr) continue;
+          g.drawImage(this.lightDot, gx - rr, gy - rr, rr * 2, rr * 2);
+        }
+        g.globalAlpha = 1;
+      }
+      // the boss's eyes
       if (scene.mon && scene.mon.boss >= 0 && scene.mon.dead[scene.mon.boss] !== 1) {
         const b = scene.mon.boss;
         light(scene.mon.x[b], scene.mon.y[b], 7, 0.5);

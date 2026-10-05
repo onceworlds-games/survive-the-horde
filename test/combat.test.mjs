@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { World } from '../game/sim.js';
-import { Fighter, A_RING, A_NOVA, A_LIGHTNING, A_RAIN, FXK_BOLT, FXK_RING, bladePos } from '../game/combat.js';
+import { Fighter, A_RING, A_LIGHTNING, A_RAIN, FXK_BOLT, FXK_RING, bladePos } from '../game/combat.js';
 import { HeroState, applyUpgrade } from '../game/hero.js';
 import { Game } from '../game/game.js';
 import { mulberry32 } from '../game/rng.js';

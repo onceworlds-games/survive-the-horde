@@ -10,7 +10,7 @@ import { monsterMaxHp, EV_KILL, EV_CRUMBLE, EV_BOSS } from './sim.js';
 import { Game } from './game.js';
 import { Fighter, FXK_BOLT, FXK_RING, FXK_LIGHTNING, FXK_RAIN, FXK_NOVA, FXK_WAVE } from './combat.js';
 import {
-  HeroState, heroStep, heroContact, gemsInReach, addXp, tickOffer, pickOffer, EV_HURT, EV_SHIELD, EV_DIED, EV_LEVEL, EV_REVIVED,
+  HeroState, heroStep, heroContact, addXp, tickOffer, pickOffer, EV_HURT, EV_SHIELD, EV_DIED, EV_LEVEL, EV_REVIVED,
 } from './hero.js';
 import { encodeMonsters, encodeGems, Snap, GemSnap, Interp } from './snapshot.js';
 import {
@@ -128,7 +128,8 @@ function readOther(room, rh, dt) {
   rh.name = player.name || rh.name || 'Player';
   rh.away = player.connected === false;
   rh.ready = player.ready === true;
-  const p = room.presenceAt(rh.id, { angles: ['f'], snap: 12 });
+  // (snap is large on purpose: any number that jumps that much counts as a teleport, and hp and the revive bar jump a lot)
+  const p = room.presenceAt(rh.id, { angles: ['f'], snap: 250 });
   if (!readPresence(p, rh)) {
     rh.present = false;
     return false;

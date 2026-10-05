@@ -390,9 +390,6 @@ export function drawMonster(g, type, frame) {
   fn(g, frame & 1);
 }
 
-/** The accent colour of each monster (UI, glows and the boss bar). */
-export const ACCENT = ['#9fe8ff', '#ff4fd8', '#7dff3a', '#ff9a3a', '#ffd24a', '#ff2a3a', '#ffd24a'];
-
 // ---------------------------------------------------------------- heroes
 /**
  * A hooded ranger in the player's colour. o: { color, dark, dx, dy (facing), walk (phase), side (+1 staff on the right),

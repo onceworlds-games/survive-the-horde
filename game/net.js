@@ -168,15 +168,16 @@ export function readPresence(p, r) {
     r.dx = Math.cos(p.f);
     r.dy = Math.sin(p.f);
   }
-  r.moving = p.mv === 1;
+  // the room slides numbers between two updates, so flags are read as "more than half"
+  r.moving = p.mv > 0.5;
   r.hp = finite(p.hp) ? Math.max(0, Math.min(5000, p.hp)) : 100;
   r.maxHp = finite(p.m) ? Math.max(1, Math.min(5000, p.m)) : 100;
   r.level = finite(p.lv) ? Math.max(1, Math.min(300, Math.round(p.lv))) : 1;
-  r.down = p.d === 1;
+  r.down = p.d > 0.5;
   r.rv = finite(p.rv) ? Math.max(0, Math.min(1, p.rv / 100)) : 0;
   unpackWeapons(p.w, r.wl);
-  r.shield = p.s === 1;
-  r.invuln = p.iv === 1 ? 1 : 0;
+  r.shield = p.s > 0.5;
+  r.invuln = p.iv > 0.5 ? 1 : 0;
   r.phase = typeof p.ph === 'string' ? p.ph.slice(0, 1) : '';
   return true;
 }

@@ -35,10 +35,11 @@ export const MON = [
   { key: 'slime', hp: 16, speed: 1.0, dmg: 8, r: 0.56 },
   { key: 'ghoul', hp: 34, speed: 1.9, dmg: 11, r: 0.55 },
   { key: 'knight', hp: 95, speed: 1.35, dmg: 17, r: 0.68 },
-  { key: 'boss', hp: 2200, speed: 1.25, dmg: 32, r: 3.0 },
+  { key: 'boss', hp: 2200, speed: 1.25, dmg: 32, r: 2.1 },
   { key: 'dummy', hp: 1e6, speed: 0, dmg: 0, r: 0.6 },
 ];
 export const MON_R = new Float32Array(MON.map((m) => m.r));
+export const BOSS_ART = 1.95; // world units per art unit of the Night Warden's picture (about 7 units tall)
 export const SMALL_R = 0.8; // every monster but the boss is at most this wide (the spatial hash relies on it)
 
 // XP gems: tier 0 green, 1 blue, 2 purple.
@@ -192,7 +193,6 @@ export const FX_KNOCK = 2;
 
 export const HERO_COLORS = ['#42b8ff', '#ff9a2e', '#78e04d', '#d57bff'];
 export const HERO_COLORS_DARK = ['#1c6fb0', '#b45a10', '#3f9a22', '#8a3fb8'];
-export const BOT_NAMES = ['Nova', 'Echo', 'Blaze', 'Pixel'];
 
 /** Night length options: the setting is seconds. */
 export function nightLength(setting) {
